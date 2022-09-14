@@ -1,0 +1,19 @@
+{
+  "name": "instadiff",
+  "version": "1.0.0",
+  "description": "git style file operations w/ IPFS",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@ipld/unixfs": "^1.1.0-dev",
+    "@web-std/stream": "^1.0.1",
+    "fastcdc-wasm": "^0.1.0",
+    "standard": "^17.0.0"
+  }
+}
