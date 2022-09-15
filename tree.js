@@ -15,9 +15,9 @@ const leaf = parts => {
       blocksizes: parts.map(({ Tsize }) => Tsize),
       filesize: sumparts(parts)
     },
-    parts.map(encodeLink)
+    parts
   )
-  return Block.decode({ bytes, hasher, codec: dagPB.codec })
+  return Block.decode({ bytes, hasher, codec: dagPB })
 }
 const branch = parts => {
   const bytes = encodePB(
@@ -26,21 +26,22 @@ const branch = parts => {
       blocksizes: parts.map(({ Tsize }) => Tsize),
       filesize: sumparts(parts)
     },
-    parts.map(encodeLink)
+    parts
   )
-  return Block.decode({ bytes, hasher, codec: dagPB.codec })
+  return Block.decode({ bytes, hasher, codec: dagPB })
 }
 
-const createLeaf = async blocks => {
-
+const createLeaf = blocks => {
+  const parts = blocks.map(block => dagPB.createLink('', block.value.byteLength, block.cid))
+  return branch(parts)
 }
 
 
-const isBreak = block => Block.cid.bytes[Block.cid.bytes.byteLength] === 0
+const isBreak = block => block.cid.bytes[block.cid.bytes.byteLength] === 0
 
 const processChunks = async chunks => {
   const blocks = await Promise.all(
-    chunks.map(value => Block.encode({ codec: raw.codec, hasher, value }))
+    chunks.map(value => Block.encode({ codec: raw, hasher, value }))
   )
   const leaves = []
   let part = []
@@ -68,8 +69,24 @@ const readFile = async filename => {
     chunks.push(data.subarray(start, end))
     start = end
   }
-  console.log(chunks)
+  return chunks
 }
 
-readFile('./package-lock.json')
+export const stat = async filename => {
+  const blockmap = new Map()
+  
+  const chunks = await readFile(filename)
+  let { blocks, leaves, remaining } = await processChunks(chunks)
+  leaves = await Promise.all([...leaves, createLeaf(remaining)])
+
+  if (leaves.length > 1) {
+    throw new Error('Not implemented: top of tree')
+  }
+
+  for (const block of [...blocks, ...leaves]) {
+    blockmap.set(block.cid.toString(), block)
+  }
+  return { blockmap, root: leaves[0].cid }
+}
+
 

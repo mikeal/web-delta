@@ -11,9 +11,14 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@ipld/car": "^4.1.5",
     "@ipld/unixfs": "^1.1.0-dev",
     "@web-std/stream": "^1.0.1",
     "fastcdc-wasm": "^0.1.0",
-    "standard": "^17.0.0"
+    "standard": "^17.0.0",
+    "yargs": "^17.5.1"
+  },
+  "devDependencies": {
+    "w3up-cli": "github:web3-storage/w3up-cli"
   }
 }
