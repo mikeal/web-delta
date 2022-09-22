@@ -1,5 +1,5 @@
 {
-  "name": "instadiff",
+  "name": "web-delta",
   "version": "1.0.0",
   "description": "git style file operations w/ IPFS",
   "type": "module",
@@ -19,6 +19,7 @@
     "yargs": "^17.5.1"
   },
   "devDependencies": {
+    "ipfs-car": "^0.8.1",
     "w3up-cli": "github:web3-storage/w3up-cli"
   }
 }

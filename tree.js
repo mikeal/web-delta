@@ -65,6 +65,7 @@ class Chunk {
       this.cid = block.cid
       const key = this.cid.toString()
       chunkmap.set(key, this)
+      if (bytes) this._block = block
     })
     this.size = bytes.byteLength
     this.range = range
@@ -76,25 +77,55 @@ class Chunk {
   ref () {
     return this.pending.then(() => ({ size: this.size, cid: this.cid }))
   }
+  async toBlock () {
+    // TODO: handle reloading data when bytes are not there
+    await this.pending
+    return this._block
+  }
 }
 
 export class Proof {
-  constructor ({ delta }) {
-    this.delta = delta
+  constructor ({ cids, blockmap }) {
+    this.cids = cids
+    this.blockmap = blockmap
   }
   verify () {
     const deltaset = delta.cids
   }
+  static verify (source, dest, getBlock) {
+  }
+  static fromDelta (delta) {
+
+  }
 }
 
 export class Delta {
-  constructor({ source, dest }) {
+  constructor({ source, dest, blockmap }) {
     this.source = source
     this.dest = dest
-    this.cids = [...dest.cids].filter(cid => !source.cids.has(cid))
+    this.blockmap = blockmap
+  }
+  static async fromDiff (sourceTree, destTree) {
+    const source = source
+    const dest = dest
+    const cids = new Set([...dest.cids].filter(cid => !source.cids.has(cid)))
+    const gb = cid => {
+      if (cid.startsWith('dagpb')) {
+        return destTree.tree.get(cid) || sourceTree.tree.get(cid)
+      } else cid.startsWith('cbor')) {
+        const chunk = destTree.chunkmap.get(cid) || sourceTree.chunkmap.get(cid)
+        return chunk.toBlock()
+      } else {
+        throw new Error('unknown cid ' + cid)
+      }
+    }
+
+    const blockmap new Map(await Promise.all(cids.map.(gb)))
+
+    return new this({ source: sourceTree.root, dest: destTree.root, blockmap })
   }
   proof () {
-    return new Proof({ delta: this })
+    return Proof.fromDelta(this)
   }
 }
 
@@ -129,8 +160,8 @@ export class FileTree {
     return Promise.all((await this.toByteVector(opts)).flat())
   }
   async read (opts={}) {
-    console.log([...await this.readVector(opts)])
-    return new Uint8Array([...(await this.readVector(opts)).map(x => (...x)])
+    const vector = await this.readVector(opts)
+    return Buffer.concat(vector)
   }
   toByteVectorWithProof ({ range }) {
     throw new Error('unimplemented')
@@ -193,7 +224,7 @@ export class FileTree {
     return new this({ tree, chunks, chunkmap, filename, root: branches[0].cid })
   }
   async delta (dest) {
-    return new Delta({ source, dest })
+    return Delta.fromDiff({ source, dest })
   }
 }
 
