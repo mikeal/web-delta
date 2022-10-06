@@ -77,9 +77,26 @@ const delta = async argv => {
   }
 }
 const apply = async argv => {
-  if (argv.outfile !== 'stdout') {
+  const cid = argv['delta-cid']
+  if (cid === 'stdin') {
+    throw new Error('not implemented')
+  }
+  let source_tree
+  let dest_tree
+  let carbytes
+  let result
+  if (cid.startsWith('bafla') && !cid.contains('.') && !cid.contains('/')) {
+    throw new Error('not implemented: car fetch')
   } else {
-    process.write
+    source_tree = await FileTree.fromFile({ filename: argv['source-file'] })
+    carbytes = readFileSync(cid)
+    result = await source_tree.apply(carbytes)
+  }
+  if (!source_tree) throw new Error('not enough arguments')
+  if (argv.outfile !== 'stdout') {
+    write_file(argv, result)
+  } else {
+    process.stdout.write(result)
   }
 }
 
