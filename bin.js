@@ -1,40 +1,103 @@
 #!/usr/bin/env node
 
 import yargs from 'yargs'
+import { readFileSync, writeFileSync } from 'fs'
 import { hideBin } from 'yargs/helpers'
-import { stat } from './tree.js'
-import { createHash } from 'node:crypto'
-import { CarWriter } from '@ipld/car'
-import { Readable } from 'stream'
+import { stat as treeStat, FileTree, writeCar } from './tree.js'
 
-const options = () => {}
+const car_default_outfile = '${cid}.car'
 
-const writeCar = async (root, blockmap, output) => {
-  const car = await CarWriter.create([root])
-  const out = Readable.from(car.out)
-  out.pipe(output)
-  const hasher = createHash('sha256')
-  out.pipe(hasher)
-  // sort the blocks by CID to ensure consistency
-  for (const key of [...blockmap.keys()].sort()) {
-    const block = blockmap.get(key)
-    car.writer.put(block)
+const outfile_options = (argv, default_outfile=car_default_outfile) => {
+  argv.option('outfile', {
+    type: 'string',
+    default: default_outfile
+  })
+}
+
+const write_file = (argv, bytes) => {
+  if (argv.outfile === 'stdout') return
+  if (argv.outfile === car_default_outfile) {
+    throw new Error('not implemented')
   }
-  await car.writer.close()
-  const hash = hasher.digest()
-  // TODO: build proper CID
-  return hash
+  writeFileSync(argv.outfile, bytes)
+}
+
+const car_options = argv => {
+  argv.option('stdout', {
+    type: 'boolean',
+    default: false
+  })
+  argv.option('publish', {
+    type: 'boolean',
+    default: false
+  })
+  outfile_options(argv)
+  options(argv)
+}
+
+const apply_options = argv => {
+  outfile_options(argv, 'stdout')
+  argv.option('stdout', {
+    type: 'boolean',
+    default: true
+  })
+}
+
+const delta_options = car_options
+
+const options = argv => {
+  argv.option('automation', {
+    desc: 'Supress feedback prompts. Dangerous when used to overwrite existing files.',
+    type: 'boolean',
+    default: false
+  })
+}
+
+const delta = async argv => {
+  const source_tree = await FileTree.fromFile({ filename: argv['origin-file'] })
+  const dest_tree = await FileTree.fromFile({ filename: argv['updated-file'] })
+
+  if (source_tree.root.toString() === dest_tree.root.toString()) {
+    console.error('sorry, these files are an exact match :(')
+    process.exit(1)
+  }
+
+  const delta = await source_tree.delta(dest_tree)
+  const carbytes = await delta.export()
+  if (argv.stdout) {
+    process.stdout.write(carbytes)
+  } else if (!argv.publish) {
+    write_file(argv, carbytes)
+    return
+  }
+  if (argv.publish) {
+    throw new Error('unimplemented, i\'ll get around to it soon tho')
+  } else if (!argv.stdout) {
+    process.stdout.write(carbytes)
+  }
+}
+const apply = async argv => {
+  if (argv.outfile !== 'stdout') {
+  } else {
+    process.write
+  }
+}
+
+const stat = async argv => {
+  const { root } = await treeStat(argv.file)
+  console.log(root.toString())
+}
+
+const export_command = async argv => {
+  const { root, blockmap } = await stat(argv.file)
+  const cid = await writeCar(root, blockmap, process.stdout)
 }
 
 yargs(hideBin(process.argv))
-  .command('stat <file>', 'Prints file encode info', options, async (argv) => {
-    const { root } = await stat(argv.file)
-    console.log(root.toString())
-  })
-  .command('export <file>', 'Exports a CAR of the entire file for IPFS.', options, async argv => {
-    const { root, blockmap } = await stat(argv.file)
-    const cid = await writeCar(root, blockmap, process.stdout)
-  })
+  .command('delta <origin-file> <updated-file>', 'Produce DELTA', delta_options, delta)
+  .command('apply <source-file> <delta-cid>', 'Apply DELTA', apply_options, apply)
+  .command('stat <file>', 'Prints file encode info', options, stat)
+  .command('export <file>', 'Exports a CAR of the entire file for IPFS.', options, export_command)
   .demandCommand(1)
   .parse()
 
