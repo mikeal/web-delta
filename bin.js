@@ -7,6 +7,8 @@ import { stat as treeStat, FileTree, writeCar } from './tree.js'
 
 const car_default_outfile = '${cid}.car'
 
+const carcid => () => 'replace_me'
+
 const outfile_options = (argv, default_outfile=car_default_outfile) => {
   argv.option('outfile', {
     type: 'string',
@@ -17,7 +19,7 @@ const outfile_options = (argv, default_outfile=car_default_outfile) => {
 const write_file = (argv, bytes) => {
   if (argv.outfile === 'stdout') return
   if (argv.outfile === car_default_outfile) {
-    throw new Error('not implemented')
+    argv.outfile = carcid(bytes) + '.car'
   }
   writeFileSync(argv.outfile, bytes)
 }
@@ -64,10 +66,12 @@ const delta = async argv => {
 
   const delta = await source_tree.delta(dest_tree)
   const carbytes = await delta.export()
+  argv['delta-cid'] = carcid(carbytes)
   if (argv.stdout) {
     process.stdout.write(carbytes)
   } else if (!argv.publish) {
     write_file(argv, carbytes)
+    console.log(argv['delta-cid'])
     return
   }
   if (argv.publish) {
