@@ -16,6 +16,9 @@ will be de-duplicated, similar to `git`.
 biglongcarcidasdhf9a8sdhf9a8sdhf9as8dfh9a8fdha9
 ```
 
+**Note: `--publish` will be implemented soon, for now you can work with local
+export.**
+
 Anyone with the source file, or any file similar *enough* to the original,
 can apply the delta from anywhere in the world using the identifier returned
 from publish.
