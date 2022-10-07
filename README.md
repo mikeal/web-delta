@@ -1,5 +1,9 @@
 # Web DELTA
 
+**Warning: this is new code and the DELTA format will likely change. Keep
+a copy of the exact version you produce DELTAs with in order to ensure
+you can merge them until the format stabilized.**
+
 This is a set of protocols for producing deltas between sequences of bytes (files,
 memory, etc), serializing the DELTA (changed bytes), and efficiently
 sharing and applying them.
