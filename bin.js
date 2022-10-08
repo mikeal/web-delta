@@ -7,7 +7,7 @@ import { stat as treeStat, FileTree, writeCar } from './tree.js'
 
 const car_default_outfile = '${cid}.car'
 
-const carcid => () => 'replace_me'
+const carcid = () => 'replace_me'
 
 const outfile_options = (argv, default_outfile=car_default_outfile) => {
   argv.option('outfile', {
