@@ -4,6 +4,8 @@ import yargs from 'yargs'
 import { readFileSync, writeFileSync } from 'fs'
 import { hideBin } from 'yargs/helpers'
 import { stat as treeStat, FileTree, writeCar } from './tree.js'
+import { createClient } from '@web3-storage/w3up-client'
+import w3up from './w3up-sub.js'
 
 const car_default_outfile = '${cid}.car'
 
@@ -55,6 +57,20 @@ const options = argv => {
   })
 }
 
+const publish = async cardata => {
+  console.log({cardata})
+  const client = createClient({
+    serviceDID: 'did:key:z6MkrZ1r5XBFZjBU34qyD8fueMbMRkKw17BZaq2ivKFjnz2z',
+    serviceURL: 'https://8609r1772a.execute-api.us-east-1.amazonaws.com',
+    accessDID: 'did:key:z6MkkHafoFWxxWVNpNXocFdU6PL2RVLyTEgS1qTnD3bRP7V9',
+    accessURL: 'https://access-api.web3.storage',
+    settings: new Map(),
+  })
+
+  const msg = await client.upload(cardata)
+  console.log(msg)
+}
+
 const delta = async argv => {
   const source_tree = await FileTree.fromFile({ filename: argv['origin-file'] })
   const dest_tree = await FileTree.fromFile({ filename: argv['updated-file'] })
@@ -75,7 +91,7 @@ const delta = async argv => {
     return
   }
   if (argv.publish) {
-    throw new Error('unimplemented, i\'ll get around to it soon tho')
+    await publish(carbytes)
   } else if (!argv.stdout) {
     process.stdout.write(carbytes)
   }
@@ -114,11 +130,18 @@ const export_command = async argv => {
   const cid = await writeCar(root, blockmap, process.stdout)
 }
 
+const w3up_command = async argv => {
+  const args = argv._.slice(1)
+  const p = w3up(...args)
+  //console.log(p)
+}
+
 yargs(hideBin(process.argv))
   .command('delta <origin-file> <updated-file>', 'Produce DELTA', delta_options, delta)
   .command('apply <source-file> <delta-cid>', 'Apply DELTA', apply_options, apply)
   .command('stat <file>', 'Prints file encode info', options, stat)
   .command('export <file>', 'Exports a CAR of the entire file for IPFS.', options, export_command)
+  .command('w3up', 'Shell out to w3up', options, w3up_command)
   .demandCommand(1)
   .parse()
 
