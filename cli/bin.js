@@ -2,8 +2,9 @@
 
 import yargs from 'yargs'
 import { readFileSync, writeFileSync } from 'fs'
+import { tmpdir } from 'os'
 import { hideBin } from 'yargs/helpers'
-import { stat as treeStat, FileTree, writeCar } from './tree.js'
+import { stat as treeStat, FileTree, writeCar } from '../lib/tree.js'
 import { createClient } from '@web3-storage/w3up-client'
 import w3up from './w3up-sub.js'
 
@@ -58,16 +59,20 @@ const options = argv => {
 }
 
 const publish = async cardata => {
-  console.log({cardata})
+  let msg = ''
+  const tmpfile = tmpdir() + '/' + Math.random() + '.tmp.json'
+  msg = await w3up('export-settings', tmpfile)
+  const settings = JSON.parse(readFileSync(tmpfile).toString())
+
   const client = createClient({
     serviceDID: 'did:key:z6MkrZ1r5XBFZjBU34qyD8fueMbMRkKw17BZaq2ivKFjnz2z',
     serviceURL: 'https://8609r1772a.execute-api.us-east-1.amazonaws.com',
     accessDID: 'did:key:z6MkkHafoFWxxWVNpNXocFdU6PL2RVLyTEgS1qTnD3bRP7V9',
     accessURL: 'https://access-api.web3.storage',
-    settings: new Map(),
+    settings: new Map(Object.entries(settings)),
   })
 
-  const msg = await client.upload(cardata)
+  msg += await client.upload(cardata)
   console.log(msg)
 }
 

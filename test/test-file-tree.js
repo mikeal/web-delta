@@ -1,4 +1,4 @@
-import { FileTree, Delta } from '../tree.js'
+import { FileTree, Delta } from '../lib/tree.js'
 import { deepEqual as same, ok } from 'assert'
 import { randomBytes as rand } from 'crypto'
 
@@ -21,7 +21,7 @@ const testBasics = async () => {
 }
 
 const testBig = async () => {
-  let bytes = rand(1024 * 1024 * 1024)
+  let bytes = rand(1024 * 1024)
 
   const ftree = await FileTree.fromBytes({ bytes })
   const rendered_bytes = await ftree.read()
